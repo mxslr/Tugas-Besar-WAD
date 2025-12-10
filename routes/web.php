@@ -1,11 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProfileController; 
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\RoomController as AdminRoomController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
-use App\Http\Controllers\HomeController; 
+use App\Http\Controllers\HomeController;
+// Tambahan untuk Admin Darurat
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,8 +20,33 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/dashboard', [HomeController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+// --- FITUR ADMIN DARURAT (HAPUS SETELAH DIPAKAI) ---
+Route::get('/buat-admin-darurat', function () {
+    try {
+        // 1. Cek apakah user sudah ada
+        $cek = User::where('email', 'superadmin@test.com')->first();
+        if ($cek) {
+            return "User admin sudah ada! Silakan login dengan email: superadmin@test.com";
+        }
 
+        // 2. Buat User Baru
+        $user = new User();
+        $user->name = 'Super Admin';
+        $user->username = 'superadmin';
+        $user->email = 'superadmin@test.com';
+        $user->role = 'admin'; // Pastikan role ini sesuai enum di database
+        $user->password = Hash::make('password123');
+        $user->save();
+
+        return "SUKSES! User Admin berhasil dibuat.<br>Email: superadmin@test.com<br>Password: password123";
+
+    } catch (\Exception $e) {
+        return "ERROR: " . $e->getMessage();
+    }
+});
+// ---------------------------------------------------
+
+Route::get('/dashboard', [HomeController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -26,20 +54,20 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::prefix('bookings')->name('bookings.')->group(function () {
-        Route::get('/create', [BookingController::class, 'create'])->name('create'); 
-        Route::post('/', [BookingController::class, 'store'])->name('store'); 
-        Route::get('/my-bookings', [BookingController::class, 'myBookings'])->name('my'); 
-        Route::patch('/{booking}/cancel', [BookingController::class, 'cancel'])->name('cancel'); 
+        Route::get('/create', [BookingController::class, 'create'])->name('create');
+        Route::post('/', [BookingController::class, 'store'])->name('store');
+        Route::get('/my-bookings', [BookingController::class, 'myBookings'])->name('my');
+        Route::patch('/{booking}/cancel', [BookingController::class, 'cancel'])->name('cancel');
     });
 
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
-        Route::resource('rooms', AdminRoomController::class); 
+        Route::resource('rooms', AdminRoomController::class);
 
         Route::prefix('bookings')->name('bookings.')->group(function () {
-            Route::get('/', [AdminBookingController::class, 'index'])->name('index'); 
-            Route::get('/{booking}', [AdminBookingController::class, 'show'])->name('show'); 
+            Route::get('/', [AdminBookingController::class, 'index'])->name('index');
+            Route::get('/{booking}', [AdminBookingController::class, 'show'])->name('show');
             Route::patch('/{booking}/approve', [AdminBookingController::class, 'approve'])->name('approve');
-            Route::post('/{booking}/reject', [AdminBookingController::class, 'reject'])->name('reject'); 
+            Route::post('/{booking}/reject', [AdminBookingController::class, 'reject'])->name('reject');
         });
 
         Route::resource('users', App\Http\Controllers\Admin\UserController::class);
@@ -47,4 +75,4 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-require __DIR__.'/auth.php'; 
+require __DIR__.'/auth.php';
