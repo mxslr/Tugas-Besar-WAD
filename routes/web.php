@@ -20,7 +20,7 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// --- FITUR ADMIN DARURAT (HAPUS SETELAH DIPAKAI) ---
+// --- FITUR ADMIN DARURAT (REVISI SESUAI DB KAMU) ---
 Route::get('/buat-admin-darurat', function () {
     try {
         // 1. Cek apakah user sudah ada
@@ -31,11 +31,21 @@ Route::get('/buat-admin-darurat', function () {
 
         // 2. Buat User Baru
         $user = new User();
-        $user->name = 'Super Admin';
+        
+        // HAPUS baris $user->name karena kolom 'name' tidak ada di database kamu
+        // $user->name = 'Super Admin'; 
+        
         $user->username = 'superadmin';
         $user->email = 'superadmin@test.com';
-        $user->role = 'admin'; // Pastikan role ini sesuai enum di database
-        $user->password = Hash::make('password123');
+        $user->role = 'admin'; 
+        
+        // Perhatikan ini: Berdasarkan error log kamu, kolomnya bernama 'password_hash'
+        // Jika nanti error "Unknown column password_hash", ganti jadi $user->password
+        $user->password = Hash::make('password123'); 
+        
+        // Jika User Model kamu memaksa field 'password_hash', uncomment baris bawah ini:
+        // $user->password_hash = Hash::make('password123');
+
         $user->save();
 
         return "SUKSES! User Admin berhasil dibuat.<br>Email: superadmin@test.com<br>Password: password123";
