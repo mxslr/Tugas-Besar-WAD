@@ -11,11 +11,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        
+        // 1. Tambahkan ini agar Laravel percaya pada Server Railway (Fix Login)
+        $middleware->trustProxies(at: '*');
+
+        // 2. Middleware Role kamu tetap ada di sini
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
     })
-
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
